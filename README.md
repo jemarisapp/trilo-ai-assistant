@@ -1,6 +1,6 @@
 # 🏈 Trilo - Dynasty League Discord Bot
 
-A comprehensive Discord bot designed specifically for dynasty fantasy football leagues, featuring team management, matchup automation, attribute points, and advanced analytics.
+A comprehensive Discord bot designed specifically for video game football leagues, featuring team management, matchup automation, attribute points, and advanced analytics.
 
 ![Python](https://img.shields.io/badge/python-3.8+-blue.svg)
 ![Discord.py](https://img.shields.io/badge/discord.py-2.4.0-blue.svg)
