@@ -15,7 +15,7 @@
 
 ![Trilo Bot Header](images/header.jpg)
 
-## <span style="color:#0171e4">AI-Powered Development & Integration</span>
+## ▪ AI-Powered Development & Integration
 
 ### How AI Accelerated Product Development
 This project demonstrates the power of AI as a strategic tool in product development:
