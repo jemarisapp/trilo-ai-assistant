@@ -1,4 +1,4 @@
-# 🏈 Trilo - Dynasty League Discord Bot
+# 🏈 Trilo - Sports League Discord Bot
 
 *An intelligent Discord bot that quietly handles every administrative task, so commissioners can stop managing spreadsheets and start enjoying their leagues. What used to take hours now happens instantly. Complex workflows become effortless. Designed for sports communities who know the best management happens when you don't notice it at all.*
 
@@ -40,7 +40,7 @@ Trilo leverages AI throughout the user experience to deliver intelligent automat
 
 **Business Impact**: AI features reduce manual work by 95%, eliminate data entry errors, and provide personalized experiences that increase user engagement by 300%.
 
-## 🎯 The Challenge
+## ▪ The Challenge
 
 ### The Commissioner Crisis
 Running a sports league inside Discord can be chaotic. Commissioners often manage team assignments, update win/loss records, collect weekly rankings, and approve upgrades manually. This results in inconsistent data, slower operations, and admin burnout.
@@ -51,7 +51,7 @@ Running a sports league inside Discord can be chaotic. Commissioners often manag
 - **User Engagement**: Members only active during games, no engagement between matchups
 - **Error Rate**: Manual data entry led to incorrect standings and frustrated users
 
-## 🚀 The Strategy
+## ▪ The Strategy
 
 ### AI-Powered Product Development
 Trilo eliminates the administrative burden of running online sports leagues through AI-powered automation. By leveraging AI-assisted development, I delivered a production-ready solution 10x faster than traditional methods while maintaining enterprise-level quality.
@@ -60,7 +60,7 @@ Trilo eliminates the administrative burden of running online sports leagues thro
 
 ![Trilo Strategy](images/strategy.png)
 
-## 🔍 Research & Discovery
+## ▪ Research & Discovery
 
 ### User Interview Insights
 **100+ user evaluations** revealed the true pain points and shaped product decisions.
@@ -80,7 +80,7 @@ Trilo eliminates the administrative burden of running online sports leagues thro
 - Validated phased rollout approach with subscription tiers
 - Confirmed pricing model acceptance across user segments
 
-## 🎯 Product Requirements
+## ▪ Product Requirements
 
 ### User Stories & Business Value
 
@@ -103,7 +103,7 @@ Trilo eliminates the administrative burden of running online sports leagues thro
 
 **Business Value:** Drives higher stream viewership, strengthens community bonds, reduces manual coordination overhead
 
-## ✨ The Solution
+## ▪ The Solution
 
 ### Core Features
 - **Team Management**: Assign users to teams, track ownership, manage league structure
@@ -119,7 +119,7 @@ Trilo eliminates the administrative burden of running online sports leagues thro
 - **Analytics & Logging**: Comprehensive usage tracking and performance monitoring
 - **Privacy Compliant**: GDPR-compliant data handling with minimal data collection
 
-## 📊 Results & Impact
+## ▪ Results & Impact
 
 ### User Journey Transformation
 
@@ -141,7 +141,7 @@ Trilo eliminates the administrative burden of running online sports leagues thro
 - **Engagement**: 300% increase in between-game activity
 - **Retention**: 0% commissioner burnout in active leagues
 
-## 🏗️ Technical Architecture
+## ▪ Technical Architecture
 
 ### AI Integration
 - AI-assisted development with Python and discord.py
@@ -161,7 +161,7 @@ Trilo eliminates the administrative burden of running online sports leagues thro
 - Rich embed messages with clear formatting
 - Mobile Discord app compatibility
 
-## 📁 Project Structure
+## ▪ Project Structure
 
 ```
 trilo-discord-bot/
@@ -190,7 +190,7 @@ trilo-discord-bot/
 └── main.py                  # Application entry point
 ```
 
-## 🎯 Key Learnings
+## ▪ Key Learnings
 
 ### Product Management Insights
 - **AI as a Force Multiplier**: AI doesn't replace product thinking—it amplifies it
@@ -199,17 +199,17 @@ trilo-discord-bot/
 - **Technical Understanding Matters**: Deep technical knowledge enables better PM decisions
 - **Business Value Focus**: Every feature tied to measurable business outcomes
 
-## 📄 License
+## ▪ License
 
 This project is licensed under All Rights Reserved - see the [LICENSE](LICENSE) file for details.
 
-## 🆘 Support
+## ▪ Support
 
 - **Documentation**: Use `/trilo help` in Discord for command help
 - **Issues**: Report bugs or request features via GitHub Issues
 - **Discord**: Join our support server for real-time help
 
-## 🎉 Acknowledgments
+## ▪ Acknowledgments
 
 - Built with [discord.py](https://github.com/Rapptz/discord.py)
 - AI features powered by [OpenAI](https://openai.com/)
@@ -217,6 +217,6 @@ This project is licensed under All Rights Reserved - see the [LICENSE](LICENSE) 
 
 ---
 
-**Trilo** - The Dynasty League Assistant 🏈
+**Trilo** - The Sports League Assistant
 
 *Demonstrating how AI can accelerate product development while maintaining focus on user needs and business value. This project showcases the intersection of product management, AI leverage, and technical execution.*
