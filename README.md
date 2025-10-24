@@ -9,7 +9,7 @@ A comprehensive Discord bot designed specifically for dynasty fantasy football l
 
 ## 📖 Project Overview
 
-**For a detailed product-focused overview of Trilo, including the problem, strategy, and AI-assisted development process, please see our [Product Overview Document](OVERVIEW.md).**
+**For a detailed product-focused overview of Trilo, including the problem, strategy, and AI-assisted development process, please see my [Product Overview Document](OVERVIEW.md).**
 
 This comprehensive overview showcases the intersection of product management, AI leverage, and technical execution—demonstrating how strategic use of AI can accelerate product development while maintaining focus on user needs and business value.
 
