@@ -33,6 +33,8 @@ Trilo eliminates the administrative burden of running online sports leagues thro
 
 **Core Philosophy**: *The best league management happens when nobody has to think about it.*
 
+![Trilo Strategy](images/strategy.png)
+
 ## 🔍 Research & Discovery
 
 ### User Interview Insights
