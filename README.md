@@ -62,10 +62,14 @@ Trilo eliminates the administrative burden of running online sports leagues thro
 
 **Business Value:** Eliminates time-intensive manual work, prevents data entry errors, frees commissioners to focus on community building
 
+---
+
 #### AI-Powered Matchup Creation
 **"As a commissioner, I want to automate weekly matchup creation so that I can save 3 hours per week and eliminate manual errors."**
 
 **Business Value:** Substantially increases member engagement, reduces commissioner workload, improves league transparency
+
+---
 
 #### Real-Time Game Tracking
 **"As a league member, I want automated game status tracking so that I can see who played without asking the commissioner"**
