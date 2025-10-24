@@ -48,42 +48,6 @@ This project showcases the power of AI-assisted product development:
 
 **Result**: Delivered a production-ready product 10x faster than traditional development methods while maintaining enterprise-level quality and documentation standards.
 
-## 🚀 Quick Start
-
-### Prerequisites
-- Python 3.8 or higher
-- Discord Bot Token
-- OpenAI API Key (for AI features)
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/trilo-discord-bot.git
-   cd trilo-discord-bot
-   ```
-
-2. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Set up environment variables**
-   ```bash
-   cp secrets.env.example secrets.env
-   # Edit secrets.env with your tokens
-   ```
-
-4. **Initialize databases**
-   ```bash
-   python setup.py
-   ```
-
-5. **Run the bot**
-   ```bash
-   python main.py
-   ```
-
 ## 📁 Project Structure
 
 ```
