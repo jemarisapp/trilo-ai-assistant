@@ -35,6 +35,19 @@ Trilo eliminates the administrative burden of running online sports leagues thro
 
 ![Trilo Strategy](images/strategy.png)
 
+## 🤖 AI-Assisted Development
+
+### How AI Accelerated Product Development
+This project demonstrates the power of AI as a strategic tool in product development:
+
+- **Rapid Prototyping**: Used AI to quickly iterate through feature concepts and user flows
+- **Code Generation**: Leveraged AI to generate boilerplate code and complex logic
+- **Documentation**: AI-assisted creation of comprehensive technical documentation
+- **Testing Strategy**: AI-generated test cases and edge case identification
+- **User Experience**: AI-optimized command structures and help systems
+
+**Result**: Delivered a production-ready product 10x faster than traditional development methods while maintaining enterprise-level quality and documentation standards.
+
 ## 🔍 Research & Discovery
 
 ### User Interview Insights
@@ -77,19 +90,6 @@ Trilo eliminates the administrative burden of running online sports leagues thro
 **"As a league member, I want automated game status tracking so that I can see who played without asking the commissioner"**
 
 **Business Value:** Drives higher stream viewership, strengthens community bonds, reduces manual coordination overhead
-
-## 🤖 AI-Assisted Development
-
-### How AI Accelerated Product Development
-This project demonstrates the power of AI as a strategic tool in product development:
-
-- **Rapid Prototyping**: Used AI to quickly iterate through feature concepts and user flows
-- **Code Generation**: Leveraged AI to generate boilerplate code and complex logic
-- **Documentation**: AI-assisted creation of comprehensive technical documentation
-- **Testing Strategy**: AI-generated test cases and edge case identification
-- **User Experience**: AI-optimized command structures and help systems
-
-**Result**: Delivered a production-ready product 10x faster than traditional development methods while maintaining enterprise-level quality and documentation standards.
 
 ## ✨ The Solution
 
