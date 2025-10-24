@@ -7,7 +7,7 @@ A comprehensive Discord bot designed specifically for dynasty fantasy football l
 ![License](https://img.shields.io/badge/license-All%20Rights%20Reserved-red.svg)
 ![AI-Powered](https://img.shields.io/badge/AI-Powered%20Development-purple.svg)
 
-![AI-Assited-Development]
+![AI-Assited-Development](https://img.shields.io/badge/-purple.svg)
 
 ![Trilo Bot Header](images/header.jpg)
 
