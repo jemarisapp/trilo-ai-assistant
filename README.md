@@ -15,6 +15,19 @@
 
 ![Trilo Bot Header](images/header.jpg)
 
+## 🤖 AI-Assisted Development
+
+### How AI Accelerated Product Development
+This project demonstrates the power of AI as a strategic tool in product development:
+
+- **Rapid Prototyping**: Used AI to quickly iterate through feature concepts and user flows
+- **Code Generation**: Leveraged AI to generate boilerplate code and complex logic
+- **Documentation**: AI-assisted creation of comprehensive technical documentation
+- **Testing Strategy**: AI-generated test cases and edge case identification
+- **User Experience**: AI-optimized command structures and help systems
+
+**Result**: Delivered a production-ready product 10x faster than traditional development methods while maintaining enterprise-level quality and documentation standards.
+
 ## 🎯 The Challenge
 
 ### The Commissioner Crisis
@@ -34,19 +47,6 @@ Trilo eliminates the administrative burden of running online sports leagues thro
 **Core Philosophy**: *The best league management happens when nobody has to think about it.*
 
 ![Trilo Strategy](images/strategy.png)
-
-## 🤖 AI-Assisted Development
-
-### How AI Accelerated Product Development
-This project demonstrates the power of AI as a strategic tool in product development:
-
-- **Rapid Prototyping**: Used AI to quickly iterate through feature concepts and user flows
-- **Code Generation**: Leveraged AI to generate boilerplate code and complex logic
-- **Documentation**: AI-assisted creation of comprehensive technical documentation
-- **Testing Strategy**: AI-generated test cases and edge case identification
-- **User Experience**: AI-optimized command structures and help systems
-
-**Result**: Delivered a production-ready product 10x faster than traditional development methods while maintaining enterprise-level quality and documentation standards.
 
 ## 🔍 Research & Discovery
 
