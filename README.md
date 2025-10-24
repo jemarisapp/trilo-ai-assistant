@@ -203,12 +203,6 @@ trilo-discord-bot/
 
 This project is licensed under All Rights Reserved - see the [LICENSE](LICENSE) file for details.
 
-## ▪ Support
-
-- **Documentation**: Use `/trilo help` in Discord for command help
-- **Issues**: Report bugs or request features via GitHub Issues
-- **Discord**: Join our support server for real-time help
-
 ## ▪ Acknowledgments
 
 - Built with [discord.py](https://github.com/Rapptz/discord.py)
