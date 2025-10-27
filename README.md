@@ -1,4 +1,4 @@
-# 🏈 Trilo - Sports League Discord Bot
+# 🏈 Trilo - THE Sports League Discord Bot
 
 *An intelligent Discord bot that quietly handles every administrative task, so commissioners can stop managing spreadsheets and start enjoying their leagues. What used to take hours now happens instantly. Complex workflows become effortless. Designed for sports communities who know the best management happens when you don't notice it at all.*
 
