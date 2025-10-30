@@ -152,9 +152,9 @@ async def _handle_stream_detection(bot, message, content, raw_content):
         thumbnail_url = f"https://img.youtube.com/vi/{youtube_live_id}/maxresdefault.jpg"
         embed.set_image(url=thumbnail_url)
     elif platform == "twitch":
-        # Stream thumbnail as main image (1280x720 for best quality)
-        stream_thumb = f"https://static-cdn.jtvnw.net/previews-ttv/live_user_{twitch_username}-1280x720.jpg"
-        embed.set_image(url=stream_thumb)
+        # Use Twitch profile picture instead of stream preview
+        profile_pic_url = f"https://static-cdn.jtvnw.net/jtv_user_pictures/{twitch_username}-profile_image-300x300.png"
+        embed.set_image(url=profile_pic_url)
     
     embed.set_footer(text=f"Shared by {message.author.display_name}")
 

@@ -74,7 +74,7 @@ def setup_settings_commands(bot: commands.Bot):
             "attributes_log_channel",
             "stream_notify_role",                  # ✅ NEW
             "stream_watch_channel",                # ✅ NEW
-            "stream_announcements_enabled"         # ✅ NEW
+            "stream_announcements_enabled"        # ✅ NEW
         ],
         new_value: str
     ):
