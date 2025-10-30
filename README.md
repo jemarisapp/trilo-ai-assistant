@@ -165,7 +165,7 @@ Trilo eliminates the administrative burden of running online sports leagues thro
 
 ```
 trilo-discord-bot/
-├── commands/                 # Discord slash commands
+├── commands/                # Discord slash commands
 │   ├── admin.py             # Server management commands
 │   ├── teams.py             # Team assignment commands
 │   ├── matchups.py          # Matchup automation
