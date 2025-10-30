@@ -153,3 +153,4 @@ jobs:
         asset_path: ./dist/
         asset_name: trilo-bot-v${{ github.run_number }}.zip
         asset_content_type: application/zip
+        

@@ -75,3 +75,4 @@ We may update this privacy policy. Changes will be posted here with a clear date
 **Version**: 1.0
 
 *This privacy policy is designed to be transparent about our minimal data collection practices while ensuring compliance with applicable laws and Discord's terms of service.*
+

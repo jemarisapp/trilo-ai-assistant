@@ -369,3 +369,4 @@ data/                  # Data management
 ---
 
 This architecture document provides a comprehensive overview of Trilo's technical implementation. For specific implementation details, refer to the individual source files and inline documentation.
+

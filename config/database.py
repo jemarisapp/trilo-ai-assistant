@@ -42,3 +42,4 @@ class DatabaseConfig:
     def ensure_data_dir(cls):
         """Ensure the data directory exists"""
         cls.DATA_DIR.mkdir(parents=True, exist_ok=True) 
+        

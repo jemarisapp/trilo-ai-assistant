@@ -217,3 +217,4 @@ command_logger = CommandLogger()
 def get_command_stats(days: int = 7) -> Dict[str, Any]:
     """Get command usage statistics"""
     return command_logger.get_stats(days)
+

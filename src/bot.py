@@ -116,3 +116,4 @@ class TriloBot(commands.Bot):
                 self.logger.info(f"Removed attribute points and requests for user {member.id} ({member.name})")
         except Exception as e:
             self.logger.error(f"Error cleaning up data for user {member.id}: {e}") 
+    
