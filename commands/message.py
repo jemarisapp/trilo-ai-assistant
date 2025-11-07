@@ -14,21 +14,25 @@ def setup_message_commands(bot: commands.Bot):
     @message_group.command(name="custom", description="Send a custom message to up to 5 selected channels.")
     @app_commands.describe(
         message="The message to send to the channels.",
-        selected_channel1="Select the first channel.",
-        selected_channel2="Select the second channel (optional).",
-        selected_channel3="Select the third channel (optional).",
-        selected_channel4="Select the fourth channel (optional).",
-        selected_channel5="Select the fifth channel (optional)."
+        channel_1="Select the first channel.",
+        mention_roles="Mention roles by name, ID, or @Role (comma separated).",
+        mention_users="Mention users by @mention or ID (space separated).",
+        channel_2="Select the second channel (optional).",
+        channel_3="Select the third channel (optional).",
+        channel_4="Select the fourth channel (optional).",
+        channel_5="Select the fifth channel (optional)."
     )
     @log_command("message custom")
     async def send_message(
         interaction: discord.Interaction,
         message: str,
-        selected_channel1: str,
-        selected_channel2: str = None,
-        selected_channel3: str = None,
-        selected_channel4: str = None,
-        selected_channel5: str = None
+        channel_1: str,
+        mention_roles: str = "",
+        mention_users: str = "",
+        channel_2: str = None,
+        channel_3: str = None,
+        channel_4: str = None,
+        channel_5: str = None
     ):
 
         # Get the guild where the command was used
@@ -37,8 +41,73 @@ def setup_message_commands(bot: commands.Bot):
             await interaction.response.send_message("This command can only be used in a server.")
             return
 
+        # Resolve roles to mention
+        role_mentions = []
+        invalid_roles = []
+        if mention_roles:
+            for raw_role in mention_roles.split(","):
+                token = raw_role.strip()
+                if not token:
+                    continue
+
+                role = None
+                if token.startswith("<@&") and token.endswith(">"):
+                    role_id = token[3:-1]
+                    if role_id.isdigit():
+                        role = guild.get_role(int(role_id))
+                elif token.isdigit():
+                    role = guild.get_role(int(token))
+                else:
+                    role = discord.utils.get(guild.roles, name=token)
+
+                if role:
+                    role_mentions.append(role.mention)
+                else:
+                    invalid_roles.append(token)
+
+        if mention_roles and not role_mentions:
+            await interaction.response.send_message(
+                "No valid roles were found. Please check the role names or mentions and try again.",
+                ephemeral=True
+            )
+            return
+
+        # Resolve users to mention
+        user_mentions = []
+        invalid_users = []
+        if mention_users:
+            for entry in mention_users.split():
+                token = entry.strip()
+                if not token:
+                    continue
+
+                member = None
+                if token.startswith("<@") and token.endswith(">"):
+                    user_id_str = token[2:-1].replace("!", "")
+                    if user_id_str.isdigit():
+                        member = guild.get_member(int(user_id_str))
+                elif token.isdigit():
+                    member = guild.get_member(int(token))
+                else:
+                    member = discord.utils.find(
+                        lambda m: m.name.lower() == token.lower() or m.display_name.lower() == token.lower(),
+                        guild.members
+                    )
+
+                if member:
+                    user_mentions.append(member.mention)
+                else:
+                    invalid_users.append(token)
+
+        if mention_users and not user_mentions:
+            await interaction.response.send_message(
+                "No valid users were found to mention. Please check the values provided.",
+                ephemeral=True
+            )
+            return
+
         # Collect the selected channels
-        channel_names = [selected_channel1, selected_channel2, selected_channel3, selected_channel4, selected_channel5]
+        channel_names = [channel_1, channel_2, channel_3, channel_4, channel_5]
         channel_names = [name for name in channel_names if name]  # Filter out None values
 
         # Resolve channel objects, ensuring only text channels are selected
@@ -56,14 +125,25 @@ def setup_message_commands(bot: commands.Bot):
             )
             return
 
+        mention_prefix = " ".join(role_mentions + user_mentions).strip()
+        content_to_send = f"{mention_prefix} {message}".strip() if mention_prefix else message
+
         # Send the message to the valid channels
         for channel in channels:
             if channel:
-                await channel.send(message)
+                await channel.send(content_to_send)
 
-        await interaction.response.send_message(
-            f"Message sent to the following channels: {', '.join(channel_names)}."
-        )
+        response_parts = [f"Message sent to the following channels: {', '.join(channel_names)}."]
+        if role_mentions:
+            response_parts.append(f"Roles mentioned: {', '.join(role_mentions)}.")
+        if user_mentions:
+            response_parts.append(f"Users mentioned: {', '.join(user_mentions)}.")
+        if invalid_roles:
+            response_parts.append(f"⚠️ Could not find roles: {', '.join(invalid_roles)}.")
+        if invalid_users:
+            response_parts.append(f"⚠️ Could not find users: {', '.join(invalid_users)}.")
+
+        await interaction.response.send_message("\n".join(response_parts))
 
     # Autocomplete for each channel parameter
     async def text_channel_autocomplete(interaction: discord.Interaction, current: str):
@@ -84,11 +164,42 @@ def setup_message_commands(bot: commands.Bot):
         ]
 
     # Add autocomplete to each channel parameter
-    send_message.autocomplete("selected_channel1")(text_channel_autocomplete)
-    send_message.autocomplete("selected_channel2")(text_channel_autocomplete)
-    send_message.autocomplete("selected_channel3")(text_channel_autocomplete)
-    send_message.autocomplete("selected_channel4")(text_channel_autocomplete)
-    send_message.autocomplete("selected_channel5")(text_channel_autocomplete)
+    send_message.autocomplete("channel_1")(text_channel_autocomplete)
+    send_message.autocomplete("channel_2")(text_channel_autocomplete)
+    send_message.autocomplete("channel_3")(text_channel_autocomplete)
+    send_message.autocomplete("channel_4")(text_channel_autocomplete)
+    send_message.autocomplete("channel_5")(text_channel_autocomplete)
+
+    @send_message.autocomplete("mention_roles")
+    async def mention_roles_autocomplete(interaction: discord.Interaction, current: str):
+        guild = interaction.guild
+        if not guild:
+            return []
+
+        matching_roles = [
+            role for role in guild.roles if current.lower() in role.name.lower()
+        ]
+
+        return [
+            discord.app_commands.Choice(name=role.name, value=role.name)
+            for role in matching_roles[:10]
+        ]
+
+    @send_message.autocomplete("mention_users")
+    async def mention_users_autocomplete(interaction: discord.Interaction, current: str):
+        guild = interaction.guild
+        if not guild:
+            return []
+
+        matching_members = [
+            member for member in guild.members
+            if current.lower() in member.display_name.lower() or current.lower() in member.name.lower()
+        ]
+
+        return [
+            discord.app_commands.Choice(name=member.display_name, value=member.mention)
+            for member in matching_members[:10]
+        ]
 
 
     @subscription_required(allowed_skus=ALL_PREMIUM_SKUS)
