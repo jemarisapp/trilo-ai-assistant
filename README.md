@@ -1,4 +1,4 @@
-# 🏈 Trilo - Sports League Discord Bot
+# Trilo - Sports League Discord Bot
 
 *An intelligent Discord bot that quietly handles every administrative task, so commissioners can stop managing spreadsheets and start enjoying their leagues. What used to take hours now happens instantly. Complex workflows become effortless. Designed for sports communities who know the best management happens when you don't notice it at all.*
 
@@ -210,7 +210,5 @@ This project is licensed under All Rights Reserved - see the [LICENSE](LICENSE) 
 - Dashboard built with [Streamlit](https://streamlit.io/)
 
 ---
-
-**Trilo** - The Sports League Assistant
 
 *Demonstrating how AI can accelerate product development while maintaining focus on user needs and business value. This project showcases the intersection of product management, AI leverage, and technical execution.*
