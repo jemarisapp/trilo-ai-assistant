@@ -544,16 +544,30 @@ def setup_matchup_commands(bot: commands.Bot):
             
             # Process each image
             for i, image in enumerate(images, 1):
-                extracted_category, matchups = await process_matchup_image(image.url)
-                
-                if extracted_category and matchups:
-                    all_categories.append(f"Image {i}: {extracted_category}")
-                    all_matchups.extend(matchups)
-                else:
-                    await interaction.followup.send(
-                        f"⚠️ Could not extract matchup information from image {i}. Skipping this image.", 
-                        ephemeral=True
-                    )
+                try:
+                    extracted_category, matchups = await process_matchup_image(image.url)
+                    
+                    if extracted_category and matchups:
+                        all_categories.append(f"Image {i}: {extracted_category}")
+                        all_matchups.extend(matchups)
+                    else:
+                        try:
+                            await interaction.followup.send(
+                                f"⚠️ Could not extract matchup information from image {i}. Skipping this image.", 
+                                ephemeral=True
+                            )
+                        except Exception as send_error:
+                            # If we can't send the message, just log it and continue
+                            print(f"Could not send followup message for image {i}: {send_error}")
+                except Exception as img_error:
+                    print(f"Error processing image {i}: {img_error}")
+                    try:
+                        await interaction.followup.send(
+                            f"⚠️ Error processing image {i}. Skipping this image.", 
+                            ephemeral=True
+                        )
+                    except:
+                        pass
             
             if not all_matchups:
                 await interaction.followup.send(
@@ -667,14 +681,41 @@ def setup_matchup_commands(bot: commands.Bot):
                     self.stop()
             
             view = ConfirmImageMatchupsView(interaction.user)
-            await interaction.followup.send(embed=preview_embed, view=view, ephemeral=True)
+            
+            # Try to send the preview with retry logic for network issues
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    await interaction.followup.send(embed=preview_embed, view=view, ephemeral=True)
+                    break  # Success, exit retry loop
+                except (discord.HTTPException, TimeoutError, asyncio.TimeoutError) as send_error:
+                    if attempt < max_retries - 1:
+                        print(f"Failed to send preview (attempt {attempt + 1}/{max_retries}): {send_error}")
+                        await asyncio.sleep(1)  # Wait 1 second before retry
+                    else:
+                        # Final attempt failed, try sending a simpler message
+                        print(f"All attempts failed to send preview. Error: {send_error}")
+                        try:
+                            await interaction.followup.send(
+                                "✅ Matchups extracted successfully! However, I couldn't display the preview. "
+                                "Please use the manual creation command or try again.",
+                                ephemeral=True
+                            )
+                        except:
+                            pass
+                        raise
             
         except Exception as e:
             print(f"Error in create_matchups_from_image: {e}")
-            await interaction.followup.send(
-                "❌ An error occurred while processing the images. Please try again or use the manual matchup creation command.",
-                ephemeral=True
-            )
+            import traceback
+            print(f"Traceback: {traceback.format_exc()}")
+            try:
+                await interaction.followup.send(
+                    "❌ An error occurred while processing the images. Please try again or use the manual matchup creation command.",
+                    ephemeral=True
+                )
+            except:
+                pass
 
 
     async def create_matchups_internal(

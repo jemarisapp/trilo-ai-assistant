@@ -545,8 +545,34 @@ def log_command(command_name: str):
                 
                 # Execute the command with timeout protection
                 import asyncio
+                
+                # Commands that need longer timeouts (multi-image processing, multi-channel edits)
+                # Heavier flows touch many channels or call external APIs and can exceed 25s
+                long_timeout_commands = [
+                    # Image extraction / creation flows
+                    "matchups create-from-image",
+                    "matchups cfb-create-from-image",
+                    "matchups nfl-create-from-image",
+                    "matchups create-from-text",
+                    "matchups create",
+                    # Category-wide operations
+                    "matchups tag-users",
+                    "matchups sync-records",
+                    "matchups make-public",
+                    "matchups make-private",
+                    "matchups add-game-status",
+                    # Deletions in large categories may take longer
+                    "matchups delete",
+                ]
+                
+                # Use longer timeout for image processing commands (120 seconds = 2 minutes)
+                # This allows time for processing multiple images + network delays
+                # Regular commands get 25 seconds
+                # Discord allows up to 15 minutes for deferred interactions, but we cap at 2 min to prevent hung commands
+                timeout = 120.0 if command_name in long_timeout_commands else 25.0
+                
                 try:
-                    result = await asyncio.wait_for(func(*args, **kwargs), timeout=25.0)  # 25 second timeout
+                    result = await asyncio.wait_for(func(*args, **kwargs), timeout=timeout)
                     return result
                 except asyncio.TimeoutError:
                     # Handle timeout gracefully
