@@ -8,7 +8,7 @@ import asyncio
 from typing import Literal
 from utils.utils import get_db_connection, clean_team_key, strip_status_suffix, apply_status_suffix, format_team_name
 from utils.common import commissioner_only, subscription_required, ALL_PREMIUM_SKUS
-from commands.settings import is_record_tracking_enabled, get_server_setting
+from commands.settings import is_record_tracking_enabled, get_server_setting, is_matchup_auto_confirm_enabled
 from utils.command_logger import log_command
 import os
 from dotenv import load_dotenv
@@ -680,30 +680,62 @@ def setup_matchup_commands(bot: commands.Bot):
                     )
                     self.stop()
             
-            view = ConfirmImageMatchupsView(interaction.user)
+            # Check if auto-confirm is enabled
+            server_id = str(interaction.guild.id)
+            auto_confirm = is_matchup_auto_confirm_enabled(server_id)
             
-            # Try to send the preview with retry logic for network issues
-            max_retries = 3
-            for attempt in range(max_retries):
-                try:
-                    await interaction.followup.send(embed=preview_embed, view=view, ephemeral=True)
-                    break  # Success, exit retry loop
-                except (discord.HTTPException, TimeoutError, asyncio.TimeoutError) as send_error:
-                    if attempt < max_retries - 1:
-                        print(f"Failed to send preview (attempt {attempt + 1}/{max_retries}): {send_error}")
-                        await asyncio.sleep(1)  # Wait 1 second before retry
-                    else:
-                        # Final attempt failed, try sending a simpler message
-                        print(f"All attempts failed to send preview. Error: {send_error}")
-                        try:
-                            await interaction.followup.send(
-                                "✅ Matchups extracted successfully! However, I couldn't display the preview. "
-                                "Please use the manual creation command or try again.",
-                                ephemeral=True
-                            )
-                        except:
-                            pass
-                        raise
+            if auto_confirm:
+                # Auto-confirm enabled: create matchups immediately
+                await interaction.followup.send(
+                    f"⚡ Creating {len(all_matchups)} matchup(s) from {len(images)} image(s)...",
+                    ephemeral=True
+                )
+                
+                # Create the matchups directly
+                if resolved_league == "nfl":
+                    await create_matchups_internal_nfl(
+                        interaction,
+                        final_category,
+                        all_matchups,
+                        game_status,
+                        roles_allowed,
+                        skip_cpu_vs_cpu=True
+                    )
+                else:
+                    await create_matchups_internal(
+                        interaction, 
+                        final_category, 
+                        all_matchups, 
+                        game_status, 
+                        roles_allowed,
+                        skip_cpu_vs_cpu=True
+                    )
+            else:
+                # Auto-confirm disabled: show confirmation button
+                view = ConfirmImageMatchupsView(interaction.user)
+                
+                # Try to send the preview with retry logic for network issues
+                max_retries = 3
+                for attempt in range(max_retries):
+                    try:
+                        await interaction.followup.send(embed=preview_embed, view=view, ephemeral=True)
+                        break  # Success, exit retry loop
+                    except (discord.HTTPException, TimeoutError, asyncio.TimeoutError) as send_error:
+                        if attempt < max_retries - 1:
+                            print(f"Failed to send preview (attempt {attempt + 1}/{max_retries}): {send_error}")
+                            await asyncio.sleep(1)  # Wait 1 second before retry
+                        else:
+                            # Final attempt failed, try sending a simpler message
+                            print(f"All attempts failed to send preview. Error: {send_error}")
+                            try:
+                                await interaction.followup.send(
+                                    "✅ Matchups extracted successfully! However, I couldn't display the preview. "
+                                    "Please use the manual creation command or try again.",
+                                    ephemeral=True
+                                )
+                            except:
+                                pass
+                            raise
             
         except Exception as e:
             print(f"Error in create_matchups_from_image: {e}")

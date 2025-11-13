@@ -10,13 +10,6 @@ from typing import Optional
 from config.settings import BotSettings
 from utils import get_db_connection
 
-# ============================================================================
-# FEATURE FLAG: AI CONVERSATION SYSTEM
-# ============================================================================
-# Set to False to disable AI @mentions feature (for training/development)
-ENABLE_AI_CONVERSATION = False  # Set to True when ready to use
-# ============================================================================
-
 # Rate limiting for error logs
 @functools.lru_cache(maxsize=100)
 def should_log_error(error_type: str, context: str = "") -> bool:
@@ -48,34 +41,8 @@ async def handle_message(bot, message: discord.Message):
         await _handle_stream_detection(bot, message, content, raw_content)
         return
     
-    # Handle AI conversation (bot mentions or DMs)
-    if ENABLE_AI_CONVERSATION:
-        bot_mentioned = bot.user in message.mentions if message.guild else False
-        is_dm = isinstance(message.channel, discord.DMChannel)
-        
-        if bot_mentioned or is_dm:
-            bot.logger.info(f"[AI] Triggered - Mentioned: {bot_mentioned}, DM: {is_dm}, Content: {message.content[:50]}")
-            try:
-                from src.ai.conversation import handle_ai_conversation
-                result = await handle_ai_conversation(bot, message)
-                if result:
-                    bot.logger.info(f"[AI] Response sent successfully")
-                else:
-                    bot.logger.info(f"[AI] Handler returned None (may have sent its own response)")
-            except Exception as e:
-                # Log error but don't break message handling
-                error_context = "[AI Conversation Error]"
-                error_msg = f"{error_context} {type(e).__name__}: {str(e)[:200]}"
-                bot.logger.error(error_msg)
-                print(f"❌ {error_msg}")
-                import traceback
-                bot.logger.error(f"{error_context} Traceback: {traceback.format_exc()}")
-    else:
-        # AI conversation is disabled - log if someone tries to use it
-        bot_mentioned = bot.user in message.mentions if message.guild else False
-        is_dm = isinstance(message.channel, discord.DMChannel)
-        if bot_mentioned or is_dm:
-            bot.logger.info(f"[AI] Mention detected but AI conversation is disabled (training mode)")
+    # AI conversation feature removed for Discord policy compliance
+    # Slash commands remain fully functional and policy-compliant
 
 async def _handle_stream_detection(bot, message, content, raw_content):
     """Handle stream detection and announcement"""

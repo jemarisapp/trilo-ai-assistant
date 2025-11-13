@@ -34,6 +34,18 @@ def is_record_tracking_enabled(server_id: str) -> bool:
         return row and row[0].strip().lower() == "on"
 
 
+def is_matchup_auto_confirm_enabled(server_id: str) -> bool:
+    """Check if auto-confirm is enabled for create-from-image matchups"""
+    with get_db_connection("keys") as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT new_value FROM server_settings
+            WHERE server_id = ? AND setting = 'matchup_auto_confirm'
+        """, (server_id,))
+        row = cursor.fetchone()
+        return row and row[0].strip().lower() == "on"
+
+
 def get_commissioner_roles(server_id: str) -> set:
     """Get commissioner roles from database, fallback to default if not set"""
     with get_db_connection("keys") as conn:
@@ -72,9 +84,10 @@ def setup_settings_commands(bot: commands.Bot):
             "record_tracking_enabled",
             "league_type",
             "attributes_log_channel",
-            "stream_notify_role",                  # ✅ NEW
-            "stream_watch_channel",                # ✅ NEW
-            "stream_announcements_enabled"        # ✅ NEW
+            "stream_notify_role",
+            "stream_watch_channel",
+            "stream_announcements_enabled",
+            "matchup_auto_confirm"
         ],
         new_value: str
     ):
@@ -147,8 +160,8 @@ def setup_settings_commands(bot: commands.Bot):
         else:
             value_to_store = new_value.strip()
             
-        if setting == "record_tracking_enabled" and new_value.lower() not in {"on", "off"}:
-            await interaction.response.send_message("⚠️ Please use `on` or `off` for record tracking.", ephemeral=True)
+        if setting in {"record_tracking_enabled", "matchup_auto_confirm"} and new_value.lower() not in {"on", "off"}:
+            await interaction.response.send_message("⚠️ Please use `on` or `off` for this setting.", ephemeral=True)
             return
 
 
@@ -165,12 +178,10 @@ def setup_settings_commands(bot: commands.Bot):
         if setting in {"attributes_log_channel", "stream_watch_channel"}:
             channel = interaction.guild.get_channel(int(value_to_store))
             display_value = channel.mention if channel else f"`{value_to_store}`"
-        elif setting == "record_tracking_enabled":
+        elif setting in {"record_tracking_enabled", "stream_announcements_enabled", "matchup_auto_confirm"}:
             display_value = "✅ ON" if value_to_store.lower() == "on" else "❌ OFF"
         elif setting == "league_type":
             display_value = "CFB" if value_to_store.lower() == "cfb" else "NFL"
-        elif setting == "stream_announcements_enabled":
-            display_value = "✅ ON" if value_to_store.lower() == "on" else "❌ OFF"
         elif setting in {"commissioner_roles", "stream_notify_role"}:
             display_value = f"`{value_to_store}`"
         else:
@@ -230,6 +241,12 @@ def setup_settings_commands(bot: commands.Bot):
                 discord.app_commands.Choice(name="❌ OFF", value="off"),
             ]
 
+        elif interaction.namespace.setting == "matchup_auto_confirm":
+            return [
+                discord.app_commands.Choice(name="✅ ON", value="on"),
+                discord.app_commands.Choice(name="❌ OFF", value="off"),
+            ]
+
         return []
 
     @subscription_required(allowed_skus=ALL_PREMIUM_SKUS)
@@ -257,12 +274,10 @@ def setup_settings_commands(bot: commands.Bot):
         )
 
         for setting, value in settings:
-            if setting == "record_tracking_enabled":
+            if setting in {"record_tracking_enabled", "stream_announcements_enabled", "matchup_auto_confirm"}:
                 display_value = "✅ ON" if value.lower() == "on" else "❌ OFF"
             elif setting == "league_type":
                 display_value = "CFB" if value.lower() == "cfb" else "NFL"
-            elif setting == "stream_announcements_enabled":
-                display_value = "✅ ON" if value.lower() == "on" else "❌ OFF"
             elif setting in {"attributes_log_channel", "stream_watch_channel"}:
                 channel = interaction.guild.get_channel(int(value))
                 display_value = channel.mention if channel else f"`{value}`"
@@ -291,7 +306,8 @@ def setup_settings_commands(bot: commands.Bot):
             "attributes_log_channel",
             "stream_notify_role",
             "stream_watch_channel",
-            "stream_announcements_enabled"
+            "stream_announcements_enabled",
+            "matchup_auto_confirm"
         ]):
 
         server_id = str(interaction.guild.id)
@@ -390,6 +406,15 @@ def setup_settings_commands(bot: commands.Bot):
                 "Enable or disable stream announcement features.\n"
                 "**Example:** `/settings set setting:stream_announcements_enabled new_value:on`\n"
                 "🎮 Controls whether stream notifications are active."
+            ),
+            inline=False
+        )
+        embed.add_field(
+            name="`matchup_auto_confirm`",
+            value=(
+                "Auto-create matchups from images without confirmation button.\n"
+                "**Example:** `/settings set setting:matchup_auto_confirm new_value:on`\n"
+                "⚡ When enabled, `/matchups create-from-image` creates channels immediately after processing images (skips preview confirmation)."
             ),
             inline=False
         )
