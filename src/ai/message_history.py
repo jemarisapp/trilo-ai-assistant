@@ -167,8 +167,12 @@ async def get_messages_in_timeframe(
     cutoff_time = datetime.utcnow() - timedelta(hours=hours)
     messages = []
     
+    # Calculate appropriate limit based on timeframe
+    # Assume ~50 messages per day as a reasonable estimate
+    estimated_limit = min(int(hours / 24 * 50) + 50, 500)  # Cap at 500 for performance
+    
     try:
-        async for message in channel.history(limit=100, before=before_message):
+        async for message in channel.history(limit=estimated_limit, before=before_message):
             if message.created_at < cutoff_time:
                 break
             

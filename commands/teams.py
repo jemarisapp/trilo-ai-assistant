@@ -7,6 +7,7 @@ from utils.utils import get_db_connection, format_team_name, clean_team_key, for
 from utils.common import commissioner_only, subscription_required, ALL_PREMIUM_SKUS
 from commands.settings import is_record_tracking_enabled, get_server_setting
 from utils.command_logger import log_command
+from src.ai.query_cache import get_query_cache
 
 
 def setup_team_commands(bot: commands.Bot):
@@ -92,6 +93,9 @@ def setup_team_commands(bot: commands.Bot):
             )
             conn.commit()
             
+            # Invalidate cache for team ownership queries
+            get_query_cache().invalidate_pattern("who_has", server_id)
+            
             # Send response after all database operations are complete
             await interaction.response.send_message(response_message)
             
@@ -125,6 +129,10 @@ def setup_team_commands(bot: commands.Bot):
             team_name = result[0]
             cursor.execute(f"DELETE FROM {teams_table} WHERE user_id = ? AND server_id = ?", (user.id, server_id))
             conn.commit()
+            
+            # Invalidate cache for team ownership queries
+            get_query_cache().invalidate_pattern("who_has", server_id)
+            
             await interaction.response.send_message(f"{user.mention} has been unassigned from **{format_team_name(team_name)}**.")
         else:
             await interaction.response.send_message(f"{user.mention} is not assigned to any team in this server.", ephemeral=True)
@@ -153,6 +161,10 @@ def setup_team_commands(bot: commands.Bot):
         if cursor.fetchone():
             cursor.execute(f"DELETE FROM {teams_table} WHERE LOWER(team_name) = ? AND server_id = ?", (team_name, server_id))
             conn.commit()
+            
+            # Invalidate cache for team ownership queries
+            get_query_cache().invalidate_pattern("who_has", server_id)
+            
             conn.close()
             await interaction.response.send_message(f"Team '{team_name}' has been removed from this server.")
         else:

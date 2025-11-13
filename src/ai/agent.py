@@ -6,11 +6,15 @@ Classifies user queries into different types and routes them appropriately
 from typing import Literal, Dict, Optional
 import os
 from pathlib import Path
+from .query_normalizer import normalize_query, is_team_ownership_query
+from .training_examples import get_training_prompt_addition
 
 
-def classify_query_intent(query: str) -> Literal["command_help", "command_execute", "user_specific", "league_specific", "general"]:
+def classify_query_intent(query: str) -> Literal["setup_help", "command_help", "command_execute", "user_specific", "league_specific", "general"]:
     """
     Classify the intent of a user query using an agentic approach
+    
+    Uses training examples and query normalization for consistent classification
     
     Args:
         query: User's query text
@@ -18,7 +22,30 @@ def classify_query_intent(query: str) -> Literal["command_help", "command_execut
     Returns:
         Query intent classification
     """
-    query_lower = query.lower()
+    # Normalize query first for consistent processing
+    normalized = normalize_query(query)
+    query_lower = normalized.lower()
+    
+    # ===================================================================
+    # PRIORITY 1: Team Ownership Queries (most common inconsistency)
+    # ===================================================================
+    # These MUST be caught first to ensure "who has X" always works the same
+    if is_team_ownership_query(query):
+        return "command_execute"
+    
+    # Setup/getting started indicators (user wants comprehensive guide)
+    # These should be checked BEFORE command_help to catch "how do i setup X" questions
+    setup_keywords = [
+        "how to use", "how do i use", "getting started", "setup guide",
+        "how to set up", "how to setup", "set up my league", "setup my league",
+        "how does this work", "how does the bot work", "how does trilo work",
+        "what can you do", "what do you do", "what are you", "help me set up",
+        "first time", "new league", "new to this",
+        # Specific setup/configuration questions
+        "how do i setup", "how to setup", "how do i configure", "how to configure",
+        "how do i enable", "how to enable", "setup stream", "configure stream",
+        "enable stream", "setup notif", "setup announcement"
+    ]
     
     # Command execution indicators (user wants to DO something, not learn how)
     command_execute_keywords = [
@@ -35,7 +62,7 @@ def classify_query_intent(query: str) -> Literal["command_help", "command_execut
         "announce advance", "announce week", "advance announcement", "notify advance"
     ]
     
-    # Command help indicators (user wants to LEARN how)
+    # Command help indicators (user wants to LEARN how to use a specific command)
     command_help_keywords = [
         "how do i", "how to", "how can i", "how does", "how do you",
         "what command", "what's the command", "what is the command",
@@ -58,11 +85,15 @@ def classify_query_intent(query: str) -> Literal["command_help", "command_execut
         "everyone", "all users", "all players", "league records"
     ]
     
-    # Check for command execution first (user wants to DO something)
+    # Check for setup/getting started first (highest priority for comprehensive help)
+    if any(keyword in query_lower for keyword in setup_keywords):
+        return "setup_help"
+    
+    # Check for command execution (user wants to DO something)
     if any(keyword in query_lower for keyword in command_execute_keywords):
         return "command_execute"
     
-    # Check for command help (user wants to LEARN how)
+    # Check for command help (user wants to LEARN how to use a specific command)
     if any(keyword in query_lower for keyword in command_help_keywords):
         return "command_help"
     

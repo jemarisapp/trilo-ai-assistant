@@ -35,7 +35,7 @@ Focus on key decisions, questions asked, important information shared, and actio
 Conversation ({timeframe}):
 {conversation_text}
 
-Provide a concise summary in 3-5 bullet points."""
+Provide a concise summary in 3-5 bullet points. Keep the tone casual and direct - no excessive enthusiasm."""
 
 # Cross-channel search synthesis prompt
 SEARCH_SYNTHESIS_PROMPT = """Based on the following messages from Discord channels, answer this question: "{query}"

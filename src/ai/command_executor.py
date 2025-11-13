@@ -11,6 +11,8 @@ import os
 from openai import OpenAI
 from dotenv import load_dotenv
 import json
+import time
+from .token_tracker import get_tracker
 
 load_dotenv()
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
@@ -687,6 +689,10 @@ Examples:
 Return JSON only, no other text."""
 
     try:
+        start_time = time.time()
+        tracker = get_tracker()
+        input_tokens = tracker.estimate_tokens(prompt)
+        
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -698,6 +704,11 @@ Return JSON only, no other text."""
         )
         
         result_text = response.choices[0].message.content.strip()
+        
+        # Log token usage
+        output_tokens = tracker.estimate_tokens(result_text)
+        duration_ms = (time.time() - start_time) * 1000
+        tracker.log_usage("command_extract_create_params", "gpt-4o-mini", input_tokens, output_tokens, duration_ms)
         # Remove markdown code blocks if present
         if result_text.startswith("```"):
             result_text = result_text.split("```")[1]
@@ -1184,6 +1195,10 @@ Examples:
 Return JSON only, no other text."""
 
     try:
+        start_time = time.time()
+        tracker = get_tracker()
+        input_tokens = tracker.estimate_tokens(prompt)
+        
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -1195,6 +1210,11 @@ Return JSON only, no other text."""
         )
         
         result_text = response.choices[0].message.content.strip()
+        
+        # Log token usage
+        output_tokens = tracker.estimate_tokens(result_text)
+        duration_ms = (time.time() - start_time) * 1000
+        tracker.log_usage("command_extract_delete_params", "gpt-4o-mini", input_tokens, output_tokens, duration_ms)
         # Remove markdown code blocks if present
         if result_text.startswith("```"):
             result_text = result_text.split("```")[1]
@@ -1787,6 +1807,10 @@ Examples:
 Return JSON only, no other text."""
 
     try:
+        start_time = time.time()
+        tracker = get_tracker()
+        input_tokens = tracker.estimate_tokens(prompt)
+        
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -1798,6 +1822,11 @@ Return JSON only, no other text."""
         )
         
         result_text = response.choices[0].message.content.strip()
+        
+        # Log token usage
+        output_tokens = tracker.estimate_tokens(result_text)
+        duration_ms = (time.time() - start_time) * 1000
+        tracker.log_usage("command_extract_announce_params", "gpt-4o-mini", input_tokens, output_tokens, duration_ms)
         # Remove markdown code blocks if present
         if result_text.startswith("```"):
             result_text = result_text.split("```")[1]

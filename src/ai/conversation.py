@@ -11,13 +11,19 @@ from dotenv import load_dotenv
 
 from .prompts import SYSTEM_PROMPT, CONVERSATION_CONTEXT_TEMPLATE
 from .context_retriever import get_user_context, get_league_context, get_user_matchups
-from .message_history import get_recent_messages, build_conversation_context
+from .message_history import get_recent_messages, get_messages_in_timeframe, build_conversation_context
 from .query_analyzer import classify_query_type, detect_search_intent, detect_summary_intent
 from .channel_search import search_channels_for_answer
 from .command_bridge import detect_command_intent
 from .agent import classify_query_intent, extract_command_topic
 from .command_retriever import search_knowledge_base, format_command_help
 from .command_executor import execute_command
+from .setup_retriever import search_setup_guide, format_setup_help, get_quick_start_guide, get_full_commissioner_guide, get_player_guide, load_setup_guide
+from .setup_agent import process_setup_question
+from .token_tracker import get_tracker
+from .query_normalizer import normalize_query
+from .query_patterns import try_direct_pattern_match, get_pattern_confidence
+from .query_cache import get_query_cache, should_cache_query
 
 # Load environment variables
 load_dotenv()
@@ -64,6 +70,14 @@ async def get_ai_response(prompt: str, model: str = "gpt-4o-mini", max_tokens: i
         AI response text
     """
     try:
+        import time
+        start_time = time.time()
+        tracker = get_tracker()
+        
+        # Estimate input tokens
+        full_prompt = SYSTEM_PROMPT + "\n" + prompt
+        input_tokens = tracker.estimate_tokens(full_prompt)
+        
         response = client.chat.completions.create(
             model=model,
             messages=[
@@ -73,7 +87,15 @@ async def get_ai_response(prompt: str, model: str = "gpt-4o-mini", max_tokens: i
             max_tokens=max_tokens,
             temperature=0.7
         )
-        return response.choices[0].message.content.strip()
+        
+        result = response.choices[0].message.content.strip()
+        
+        # Log token usage
+        output_tokens = tracker.estimate_tokens(result)
+        duration_ms = (time.time() - start_time) * 1000
+        tracker.log_usage("general_conversation", model, input_tokens, output_tokens, duration_ms)
+        
+        return result
     except Exception as e:
         print(f"[AI Conversation] Error getting AI response: {e}")
         return "Sorry, I'm having trouble processing that right now. Please try again!"
@@ -97,6 +119,35 @@ async def handle_ai_conversation(bot, message: discord.Message) -> Optional[disc
         return None
     
     server_id = str(message.guild.id) if message.guild else None
+    
+    # ===================================================================
+    # LAYER 1: Query Cache - Check if we've seen this exact query before
+    # ===================================================================
+    cache = get_query_cache()
+    cached_response = cache.get(query, server_id)
+    if cached_response:
+        print(f"[AI Conversation] Using cached response for: '{query}'")
+        return await message.channel.send(cached_response)
+    
+    # ===================================================================
+    # LAYER 2: Pattern Matching - Try direct routing for common patterns
+    # ===================================================================
+    confidence = get_pattern_confidence(query)
+    if confidence > 0.9:  # High confidence in pattern match
+        print(f"[AI Conversation] Using pattern match for: '{query}' (confidence: {confidence})")
+        handled, response = await try_direct_pattern_match(bot, message, query, server_id)
+        if handled and response:
+            # Cache the response
+            if should_cache_query(query, response):
+                cache.set(query, server_id, response)
+            return await message.channel.send(response)
+    
+    # ===================================================================
+    # LAYER 3: Query Normalization - Standardize query for AI processing
+    # ===================================================================
+    normalized_query = normalize_query(query)
+    if normalized_query != query:
+        print(f"[AI Conversation] Normalized: '{query}' → '{normalized_query}'")
     
     # Use agent to classify query intent
     query_intent = classify_query_intent(query)
@@ -141,6 +192,10 @@ async def handle_ai_conversation(bot, message: discord.Message) -> Optional[disc
             "or rephrase your request more clearly."
         )
     
+    # Handle setup/getting started requests
+    if query_intent == "setup_help":
+        return await handle_setup_help(bot, message, query, server_id)
+    
     # Handle command help requests with RAG
     if query_intent == "command_help":
         return await handle_command_help(bot, message, query, server_id)
@@ -161,6 +216,244 @@ async def handle_ai_conversation(bot, message: discord.Message) -> Optional[disc
     else:
         # Regular conversation (handles user_specific, league_specific, and general)
         return await handle_regular_conversation(bot, message, query, server_id, query_intent)
+
+
+async def handle_setup_help(
+    bot,
+    message: discord.Message,
+    query: str,
+    server_id: str
+) -> Optional[discord.Message]:
+    """Handle setup/getting started requests using agentic system"""
+    
+    # Load the full setup guide
+    guide_text = load_setup_guide()
+    
+    if not guide_text:
+        return await message.channel.send(
+            "I couldn't load my setup guide. Try using /settings help or /help for command information."
+        )
+    
+    # Use multi-agent system to process the question
+    # This prevents hallucination by:
+    # 1. Extracting intent (what they're asking about)
+    # 2. Searching documentation (finding exact text)
+    # 3. Extracting commands (only actual commands from docs)
+    # 4. Synthesizing response (using only found information)
+    response = process_setup_question(query, guide_text)
+    
+    # Discord has a 2000 character limit - split if needed
+    if len(response) <= 2000:
+        return await message.channel.send(response)
+    else:
+        # Split into chunks at logical points (paragraphs, sentences)
+        chunks = []
+        current_chunk = ""
+        
+        # Split by paragraphs first
+        paragraphs = response.split('\n\n')
+        
+        for para in paragraphs:
+            # If adding this paragraph would exceed limit, send current chunk
+            if len(current_chunk) + len(para) + 2 > 1900:  # Leave buffer
+                if current_chunk:
+                    chunks.append(current_chunk.strip())
+                current_chunk = para
+            else:
+                if current_chunk:
+                    current_chunk += '\n\n' + para
+                else:
+                    current_chunk = para
+        
+        # Add remaining chunk
+        if current_chunk:
+            chunks.append(current_chunk.strip())
+        
+        # Send chunks sequentially
+        sent_message = None
+        for chunk in chunks:
+            sent_message = await message.channel.send(chunk)
+        
+        return sent_message
+
+
+async def handle_setup_help_old(
+    bot,
+    message: discord.Message,
+    query: str,
+    server_id: str
+) -> Optional[discord.Message]:
+    """OLD VERSION - Handle setup/getting started requests"""
+    
+    # Check if they want a specific guide based on query content
+    query_lower = query.lower()
+    
+    # Detect query focus from keywords
+    is_commissioner_query = any(phrase in query_lower for phrase in [
+        "commissioner", "admin", "set up league", "setup league", "manage", 
+        "configure", "create matchups", "give points", "set up my league"
+    ])
+    
+    is_player_query = any(phrase in query_lower for phrase in [
+        "player", "member", "user", "my team", "my points", "how do i play"
+    ])
+    
+    if any(phrase in query_lower for phrase in ["quick start", "checklist"]):
+        # Return quick start guide
+        guide_content = get_quick_start_guide()
+        focus = "quick_start"
+    elif is_commissioner_query:
+        # Return full commissioner guide
+        guide_content = get_full_commissioner_guide()
+        focus = "commissioner"
+    elif is_player_query:
+        # Return player guide
+        guide_content = get_player_guide()
+        focus = "player"
+    else:
+        # General "how to use" queries - search for relevant sections
+        sections = search_setup_guide(query)
+        
+        if not sections:
+            # Default to comprehensive overview (first-time users section)
+            guide_content = get_quick_start_guide()
+            focus = "overview"
+        else:
+            # Format the found sections
+            guide_content = format_setup_help(sections)
+            focus = "specific"
+    
+    # Build AI prompt based on focus
+    if focus == "overview":
+        prompt = f"""The user is asking for general help using Trilo: "{query}"
+
+Here is the setup guide overview:
+{guide_content}
+
+Provide a clear, helpful introduction to Trilo. Explain:
+1. What Trilo does (sports league management bot)
+2. Who uses it (commissioners manage leagues, players participate)
+3. Key features at a high level
+4. How to get started (mention they can ask more specific questions)
+
+Keep it conversational and direct - no excessive enthusiasm. Be welcoming to both commissioners and players.
+
+CRITICAL: Only provide information from the setup guide. If something isn't covered in the guide, say "I don't have specific information about that in my setup guide. Try using /settings help or ask me about a specific feature."
+
+IMPORTANT: Keep your response under 1500 characters. Be concise but helpful."""
+
+    elif focus == "commissioner":
+        prompt = f"""The user is asking about setting up or managing a league with Trilo: "{query}"
+
+Here is the commissioner setup guide:
+{guide_content}
+
+Provide a clear, helpful response for commissioners/admins. Focus on:
+- Setup steps and configuration
+- League management features
+- How to use admin commands
+- Best practices for running a league
+
+Keep it conversational and direct - no excessive enthusiasm. Assume they may not have roles set up yet.
+
+CRITICAL: Only use information from the provided guide. Do NOT invent commands or features that aren't mentioned. If something isn't in the guide, say "I don't have information about that specific feature. Try /settings help or /help for command options."
+
+IMPORTANT: Keep your response under 1500 characters. Be concise but helpful."""
+
+    elif focus == "player":
+        prompt = f"""The user is asking how to use Trilo as a player/member: "{query}"
+
+Here is the player usage guide:
+{guide_content}
+
+Provide a clear, helpful response for league members. Focus on:
+- How to check their team and points
+- How to use basic commands
+- How to interact with the bot naturally
+- What they can do as a participant
+
+Keep it conversational and direct - no excessive enthusiasm.
+
+CRITICAL: Only use information from the provided guide. Do NOT make up commands or features. If something isn't documented, say "I don't have information about that. Ask your commissioner or try /help."
+
+IMPORTANT: Keep your response under 1500 characters. Be concise but helpful."""
+
+    elif focus == "quick_start":
+        prompt = f"""The user is asking for a quick start guide: "{query}"
+
+Here is the quick start information:
+{guide_content}
+
+Provide a concise, actionable quick start guide. Focus on:
+- Essential first steps
+- What needs to be configured
+- How to get up and running quickly
+
+Keep it conversational and direct - no excessive enthusiasm. Be efficient and to the point.
+
+CRITICAL: Only use information from the provided guide. Do NOT invent steps or commands not mentioned in the guide.
+
+IMPORTANT: Keep your response under 1500 characters. Be concise but helpful."""
+
+    else:
+        # Specific topic
+        prompt = f"""The user is asking for help with Trilo: "{query}"
+
+Here is the relevant information from the setup guide:
+{guide_content}
+
+Provide a clear, helpful response based on this information. Keep it conversational and direct - no excessive enthusiasm. 
+
+Tailor your response to their specific question, covering both commissioner and player perspectives if relevant.
+
+CRITICAL - READ CAREFULLY:
+1. ONLY use commands and information explicitly shown in the provided guide text
+2. If you see "/settings set setting:stream_announcements_enabled" in the guide, use THAT EXACT command
+3. Do NOT create fake commands like "/stream-notis" or "/stream setup"
+4. Do NOT invent command syntax that isn't explicitly documented
+5. If the guide shows specific `/settings` commands for streams, USE THOSE
+6. If something isn't clearly documented in the provided text, say: "I don't have detailed information about that. Try /settings help or /help."
+
+DO NOT HALLUCINATE COMMANDS. USE ONLY WHAT'S DOCUMENTED.
+
+IMPORTANT: Keep your response under 1500 characters. Be concise but helpful."""
+
+    # Use gpt-4o for setup help - better instruction following, less hallucination
+    response = await get_ai_response(prompt, model="gpt-4o", max_tokens=600)
+    
+    # Discord has a 2000 character limit - split if needed
+    if len(response) <= 2000:
+        return await message.channel.send(response)
+    else:
+        # Split into chunks at logical points (paragraphs, sentences)
+        chunks = []
+        current_chunk = ""
+        
+        # Split by paragraphs first
+        paragraphs = response.split('\n\n')
+        
+        for para in paragraphs:
+            # If adding this paragraph would exceed limit, send current chunk
+            if len(current_chunk) + len(para) + 2 > 1900:  # Leave buffer
+                if current_chunk:
+                    chunks.append(current_chunk.strip())
+                current_chunk = para
+            else:
+                if current_chunk:
+                    current_chunk += '\n\n' + para
+                else:
+                    current_chunk = para
+        
+        # Add remaining chunk
+        if current_chunk:
+            chunks.append(current_chunk.strip())
+        
+        # Send chunks sequentially
+        sent_message = None
+        for chunk in chunks:
+            sent_message = await message.channel.send(chunk)
+        
+        return sent_message
 
 
 async def handle_command_help(
@@ -538,9 +831,124 @@ async def handle_summary_request(
     query: str,
     server_id: str
 ) -> Optional[discord.Message]:
-    """Handle summary requests (placeholder for Phase 3)"""
+    """Handle summary requests"""
     
-    return await message.channel.send(
-        "Summary functionality will be available soon. For now, you can ask me questions about the league."
+    # Extract timeframe from query
+    timeframe_info = extract_timeframe(query)
+    timeframe_type = timeframe_info['type']
+    timeframe_value = timeframe_info['value']
+    
+    # Get messages based on timeframe
+    if timeframe_type == 'messages':
+        # Get last N messages
+        messages = await get_recent_messages(message.channel, limit=timeframe_value, before_message=message)
+        timeframe_description = f"last {timeframe_value} messages"
+    elif timeframe_type == 'hours':
+        # Get messages from last N hours
+        messages = await get_messages_in_timeframe(message.channel, hours=timeframe_value)
+        timeframe_description = f"last {timeframe_value} hour{'s' if timeframe_value != 1 else ''}"
+    elif timeframe_type == 'days':
+        # Get messages from last N days
+        messages = await get_messages_in_timeframe(message.channel, hours=timeframe_value * 24)
+        timeframe_description = f"last {timeframe_value} day{'s' if timeframe_value != 1 else ''}"
+    else:
+        # Default: last 50 messages
+        messages = await get_recent_messages(message.channel, limit=50, before_message=message)
+        timeframe_description = "recent conversation"
+    
+    if not messages:
+        return await message.channel.send(
+            "There aren't any messages to summarize in this timeframe."
+        )
+    
+    # Build conversation text for summarization
+    conversation_lines = []
+    for msg in reversed(messages):  # Show oldest first
+        # Messages are dictionaries with 'timestamp', 'author', 'content' keys
+        timestamp = msg['timestamp'].strftime("%I:%M %p")
+        author = msg['author']
+        content = msg['content']
+        
+        conversation_lines.append(f"[{timestamp}] {author}: {content}")
+    
+    conversation_text = "\n".join(conversation_lines)
+    
+    # Generate summary using AI
+    from .prompts import SUMMARY_PROMPT_TEMPLATE
+    
+    prompt = SUMMARY_PROMPT_TEMPLATE.format(
+        timeframe=timeframe_description,
+        conversation_text=conversation_text
     )
+    
+    summary = await get_ai_response(prompt, model="gpt-4o-mini", max_tokens=500)
+    
+    # Format response
+    response = f"**Summary ({timeframe_description}):**\n\n{summary}"
+    
+    return await message.channel.send(response)
+
+
+def extract_timeframe(query: str) -> dict:
+    """
+    Extract timeframe information from summary query
+    
+    Args:
+        query: User's query text
+        
+    Returns:
+        Dictionary with 'type' and 'value' keys
+    """
+    import re
+    query_lower = query.lower()
+    
+    # Check for specific number of messages
+    message_patterns = [
+        r'last (\d+) messages?',
+        r'past (\d+) messages?',
+        r'(\d+) messages?'
+    ]
+    
+    for pattern in message_patterns:
+        match = re.search(pattern, query_lower)
+        if match:
+            num_messages = int(match.group(1))
+            return {'type': 'messages', 'value': min(num_messages, 100)}  # Cap at 100
+    
+    # Check for hours
+    hour_patterns = [
+        r'last (\d+) hours?',
+        r'past (\d+) hours?'
+    ]
+    
+    for pattern in hour_patterns:
+        match = re.search(pattern, query_lower)
+        if match:
+            hours = int(match.group(1))
+            return {'type': 'hours', 'value': min(hours, 72)}  # Cap at 3 days
+    
+    # Check for days
+    day_patterns = [
+        r'last (\d+) days?',
+        r'past (\d+) days?',
+        r'yesterday'
+    ]
+    
+    for pattern in day_patterns:
+        match = re.search(pattern, query_lower)
+        if match:
+            if pattern == r'yesterday':
+                days = 1
+            else:
+                days = int(match.group(1))
+            return {'type': 'days', 'value': min(days, 7)}  # Cap at 1 week
+    
+    # Check for common phrases
+    if 'today' in query_lower:
+        return {'type': 'hours', 'value': 24}
+    elif 'this week' in query_lower or 'week' in query_lower:
+        return {'type': 'days', 'value': 7}
+    
+    # Default: last 50 messages
+    return {'type': 'messages', 'value': 50}
 

@@ -204,7 +204,7 @@ class CommandLogger:
             conn.commit()
             conn.close()
             
-            print(f"🧹 Cleaned up {usage_deleted} usage logs, {perf_deleted} performance logs, {error_deleted} error logs")
+            print(f"🧹 Cleaned up {usage_deleted} usage logs, {error_deleted} error logs")
             
         except Exception as e:
             print(f"Warning: Failed to cleanup old logs: {e}")

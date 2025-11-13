@@ -54,8 +54,10 @@ def detect_summary_intent(query: str) -> bool:
         True if user wants a summary
     """
     summary_keywords = [
-        "summarize", "summary", "recap", "catch up",
-        "what did i miss", "what happened", "what was said"
+        "summarize", "summary", "recap", "catch up", "sum up",
+        "what did i miss", "what happened", "what was said",
+        "catch me up", "brief me", "fill me in", "tldr",
+        "give me a summary", "summarize the", "recap of"
     ]
     
     query_lower = query.lower()
@@ -109,6 +111,11 @@ def classify_query_type(query: str) -> Literal["search", "summary", "command_hel
     if any(keyword in query_lower for keyword in command_help_keywords):
         return "command_help"
     
+    # Check for summary intent BEFORE search (summary is more specific)
+    # This prevents "what happened in the past 2 days" from being classified as search
+    if detect_summary_intent(query):
+        return "summary"
+    
     # Check for matchup questions (should read channels directly, not search messages)
     # BUT exclude delete/remove commands (those should be handled by command_execute)
     delete_keywords = ["delete", "remove", "clear"]
@@ -129,8 +136,6 @@ def classify_query_type(query: str) -> Literal["search", "summary", "command_hel
     
     if detect_search_intent(query):
         return "search"
-    elif detect_summary_intent(query):
-        return "summary"
     else:
         return "conversation"
 
