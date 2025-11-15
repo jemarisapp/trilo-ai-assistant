@@ -25,7 +25,6 @@ def setup_help_commands(bot: commands.Bot):
             app_commands.Choice(name="Messaging Tools", value="message"),
             app_commands.Choice(name="Attribute Point System", value="attributes"),
             app_commands.Choice(name="Win/Loss Records", value="records"),
-            app_commands.Choice(name="Ability Lab", value="ability-lab"),
             app_commands.Choice(name="Settings", value="settings")
         ],
         audience=[
@@ -58,8 +57,6 @@ def setup_help_commands(bot: commands.Bot):
                 embeds.extend(get_attributes_help(audience))
             elif feature == "records":
                 embeds.extend(get_records_help(audience))
-            elif feature == "ability-lab":
-                embeds.extend(get_ability_lab_help(audience))
             elif feature == "settings":
                 embeds.extend(get_settings_help(audience))
             else:
@@ -240,20 +237,11 @@ def get_comprehensive_overview():
     )
     embeds.append(embed7)
 
-    # Ability Lab & Subscription Tiers
+    # Subscription Tiers
     embed8 = discord.Embed(
-        title="🧪 Ability Lab & 💎 Subscription Tiers",
+        title="💎 Subscription Tiers",
         description=(
-            "**🧪 Ability Lab Command:**\n"
-            "• `/ability-lab` — Access the interactive Trilo Ability Dashboard\n\n"
-            "**Dashboard Features:**\n"
-            "• AI Upgrade Assistant for personalized advice\n"
-            "• Visual Ability Tiers (Bronze to Platinum)\n"
-            "• SP Calculator for skill point planning\n"
-            "• Detailed archetype and ability analytics\n"
-            "• Position & archetype filtering\n\n"
             "**💎 Subscription Tiers:**\n"
-            "**🔹 Free Tier**: Ability Lab\n"
             "**🔸 Pro Tier**: Team Management, Matchups, Messaging, Settings, Win/Loss Records + Attribute Points\n\n"
             "Upgrade at `/admin purchase` or start a trial with `/admin trial`"
         ),
@@ -490,26 +478,6 @@ def get_records_help(audience: str):
         embeds.append(embed)
     
     return embeds
-
-def get_ability_lab_help(audience: str):
-    """Get ability lab help embeds based on audience"""
-    embed = discord.Embed(
-        title="🧪 Ability Lab",
-        description=(
-            "Access the interactive Trilo Ability LabDashboard to explore player abilities and archetypes.\n\n"
-            "**Available Command:**\n"
-            "• `/ability-lab` — Access the full interactive dashboard\n\n"
-            "**Dashboard Features:**\n"
-            "• **AI Upgrade Assistant** - Get personalized upgrade advice\n"
-            "• **Visual Ability Tiers** - See Bronze to Platinum progression\n"
-            "• **SP Calculator** - Plan your skill point spending\n"
-            "• **Detailed Analytics** - Compare archetypes and abilities\n"
-            "• **Position & Archetype Filtering** - Browse by specific player types\n\n"
-            "💡 *This feature is available to all users and provides a comprehensive web-based interface for exploring player development options.*"
-        ),
-        color=discord.Color.purple()
-    )
-    return [embed]
 
 def get_settings_help(audience: str):
     """Get settings help embeds based on audience"""

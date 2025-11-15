@@ -41,7 +41,6 @@ class TriloBot(commands.Bot):
             
             from commands.records import setup_records_commands
             from commands.settings import setup_settings_commands
-            from commands.ability_lab import setup_ability_lab_commands
             from commands.help import setup_help_commands
             
             setup_admin_commands(self)
@@ -52,7 +51,6 @@ class TriloBot(commands.Bot):
     
             setup_settings_commands(self)
             setup_records_commands(self)
-            setup_ability_lab_commands(self)
             setup_help_commands(self)
             
             self.logger.info("✅ All command groups registered successfully")
