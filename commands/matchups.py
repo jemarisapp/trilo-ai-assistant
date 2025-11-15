@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 import base64
 import io
 from PIL import Image
-import requests
+import aiohttp
 from typing import List, Tuple, Optional
 import openai
 from openai import OpenAI
@@ -50,7 +50,7 @@ async def process_matchup_image(image_url: str) -> Tuple[Optional[str], List[str
         }
         
         payload = {
-            "model": "gpt-4o",  # or gpt-4o-mini for cheaper option
+            "model": "gpt-4o-mini",  # Faster and cheaper for text extraction
             "messages": [
             {
                     "role": "user",
@@ -110,15 +110,17 @@ If a row is incomplete or unreadable, skip it rather than guessing."""
             "temperature": 0.1  # Low temperature for more consistent extraction
         }
         
-        response = requests.post("https://api.openai.com/v1/chat/completions", 
-                               headers=headers, json=payload)
-        
-        if response.status_code != 200:
-            print(f"OpenAI API error: {response.status_code} - {response.text}")
-            return None, []
-        
-        result = response.json()
-        content = result['choices'][0]['message']['content']
+        # Use async aiohttp instead of blocking requests library
+        async with aiohttp.ClientSession() as session:
+            async with session.post("https://api.openai.com/v1/chat/completions", 
+                                   headers=headers, json=payload) as response:
+                if response.status != 200:
+                    text = await response.text()
+                    print(f"OpenAI API error: {response.status} - {text}")
+                    return None, []
+                
+                result = await response.json()
+                content = result['choices'][0]['message']['content']
         
         # Parse the response
         lines = content.strip().split('\n')
@@ -542,25 +544,14 @@ def setup_matchup_commands(bot: commands.Bot):
             all_matchups = []
             all_categories = []
             
-            # Process each image
-            for i, image in enumerate(images, 1):
-                try:
-                    extracted_category, matchups = await process_matchup_image(image.url)
-                    
-                    if extracted_category and matchups:
-                        all_categories.append(f"Image {i}: {extracted_category}")
-                        all_matchups.extend(matchups)
-                    else:
-                        try:
-                            await interaction.followup.send(
-                                f"⚠️ Could not extract matchup information from image {i}. Skipping this image.", 
-                                ephemeral=True
-                            )
-                        except Exception as send_error:
-                            # If we can't send the message, just log it and continue
-                            print(f"Could not send followup message for image {i}: {send_error}")
-                except Exception as img_error:
-                    print(f"Error processing image {i}: {img_error}")
+            # Process all images in parallel for faster processing
+            tasks = [process_matchup_image(image.url) for image in images]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            
+            # Process results
+            for i, result in enumerate(results, 1):
+                if isinstance(result, Exception):
+                    print(f"Error processing image {i}: {result}")
                     try:
                         await interaction.followup.send(
                             f"⚠️ Error processing image {i}. Skipping this image.", 
@@ -568,6 +559,21 @@ def setup_matchup_commands(bot: commands.Bot):
                         )
                     except:
                         pass
+                    continue
+                
+                extracted_category, matchups = result
+                if extracted_category and matchups:
+                    all_categories.append(f"Image {i}: {extracted_category}")
+                    all_matchups.extend(matchups)
+                else:
+                    try:
+                        await interaction.followup.send(
+                            f"⚠️ Could not extract matchup information from image {i}. Skipping this image.", 
+                            ephemeral=True
+                        )
+                    except Exception as send_error:
+                        # If we can't send the message, just log it and continue
+                        print(f"Could not send followup message for image {i}: {send_error}")
             
             if not all_matchups:
                 await interaction.followup.send(
@@ -687,7 +693,7 @@ def setup_matchup_commands(bot: commands.Bot):
             if auto_confirm:
                 # Auto-confirm enabled: create matchups immediately
                 await interaction.followup.send(
-                    f"⚡ Creating {len(all_matchups)} matchup(s) from {len(images)} image(s)...",
+                    f"⚡ Creating matchups for {final_category}...",
                     ephemeral=True
                 )
                 

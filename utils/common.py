@@ -8,6 +8,12 @@ from datetime import datetime
 DEFAULT_COMMISSIONER_ROLES = {"Commish", "Commissioners", "Commissioner"}
 
 # ───────────────────────────────────────────────
+# Super Admin Bypass
+# ───────────────────────────────────────────────
+# User ID that can bypass all permission checks
+SUPER_ADMIN_USER_ID = 1246695080094601317  # Super admin user ID
+
+# ───────────────────────────────────────────────
 # SKU Constants (Discord Premium App Subscriptions)
 # ───────────────────────────────────────────────
 
@@ -28,6 +34,10 @@ ALL_PREMIUM_SKUS = CORE_SKUS | PRO_SKUS
 
 def subscription_required(allowed_skus: set = ALL_PREMIUM_SKUS):
     async def predicate(interaction):
+        # ✅ Super admin bypass
+        if SUPER_ADMIN_USER_ID and interaction.user.id == SUPER_ADMIN_USER_ID:
+            return True
+        
         guild_id = str(interaction.guild.id)
 
         # ✅ Bypass for development/test servers
@@ -39,6 +49,8 @@ def subscription_required(allowed_skus: set = ALL_PREMIUM_SKUS):
             "1255041696949997610",  # BETA SERVER
             "1276298110380937400",  # @maink2019 - League 01
             "1324595304070381628",  # ZayBirk League
+            "1313294834349637662", 	# DuhLeague or #1311498254940372992?
+            "1386967430244597791",  # Alt-Trill
         }
         if guild_id in WHITELISTED_GUILDS:
             return True
@@ -90,6 +102,10 @@ def subscription_required(allowed_skus: set = ALL_PREMIUM_SKUS):
 
 def commissioner_only():
     async def predicate(interaction):
+        # ✅ Super admin bypass
+        if SUPER_ADMIN_USER_ID and interaction.user.id == SUPER_ADMIN_USER_ID:
+            return True
+        
         from commands.settings import get_commissioner_roles  # avoid circular import
         server_id = str(interaction.guild.id)
         allowed_roles = get_commissioner_roles(server_id)
@@ -108,6 +124,10 @@ def commissioner_only():
 
 def admin_only():
     async def predicate(interaction):
+        # ✅ Super admin bypass
+        if SUPER_ADMIN_USER_ID and interaction.user.id == SUPER_ADMIN_USER_ID:
+            return True
+        
         if interaction.user.guild_permissions.administrator:
             return True
         await interaction.response.send_message(
